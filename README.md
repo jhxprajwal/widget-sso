@@ -1,7 +1,32 @@
 # widget-sso
-test website
 
-Here’s a clear, functional (non-code) explanation you can hand to your devs so they understand how the widget + SSO flow works end-to-end, including what each party does and why it’s secure.
+This repository contains a full-stack demo website that serves as a **parent website** for embedding the Understand Tech widget with SSO authentication.
+
+## What's Included
+
+- **Backend**: FastAPI (Python) with Microsoft OAuth SSO
+- **Frontend**: React + Vite with modern UI
+- **Documentation**: Complete setup guide and architecture documentation
+
+## Quick Start
+
+See [SETUP.md](SETUP.md) for detailed installation and configuration instructions.
+
+## Project Structure
+
+```
+widget-sso/
+├── backend/          # FastAPI Python backend
+├── frontend/         # React frontend
+├── SETUP.md         # Setup instructions
+└── README.md        # This file + Widget SSO concept
+```
+
+---
+
+# Widget SSO Integration Concept
+
+Here's a clear, functional (non-code) explanation you can hand to your devs so they understand how the widget + SSO flow works end-to-end, including what each party does and why it's secure.
 Functional overview
 Goal: Allow a customer to embed an Understand Tech assistant (chat widget) in their website (an <iframe>), protected by the customer’s SSO, without exposing any secrets in the browser.
  How: The parent site proves it’s trusted using a server-side Widget API Key. The server issues a short-lived OTT (One-Time Token) to the browser, which the iframe exchanges for a secure session cookie. All chat API calls then use that cookie.
