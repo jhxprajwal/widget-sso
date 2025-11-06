@@ -20,7 +20,7 @@ app.add_middleware(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite default port
+    allow_origins=["http://localhost:5173", "https://staging.understand.tech", "https://app.understand.tech" , "https://frontend-lovat-pi-76.vercel.app"],  # Vite default port
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,12 +29,12 @@ app.add_middleware(
 # Microsoft OAuth configuration
 MICROSOFT_CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
 MICROSOFT_CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
-MICROSOFT_TENANT_ID = os.getenv("MICROSOFT_TENANT_ID", "common")
-REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/callback")
+MICROSOFT_TENANT_ID = os.getenv("MICROSOFT_TENANT_ID")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 # Widget API configuration (for future OTT requests)
 WIDGET_API_KEY = os.getenv("WIDGET_API_KEY")
-UT_API_BASE_URL = os.getenv("UT_API_BASE_URL", "https://api.understandtech.com")
+UT_API_BASE_URL = os.getenv("UT_API_BASE_URL")
 
 
 @app.get("/")

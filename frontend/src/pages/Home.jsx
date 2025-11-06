@@ -90,14 +90,12 @@ function Home({ user, onLogout }) {
                 </p>
               </div>
               
-              {/* Uncomment and configure when ready:
-              <iframe
-                ref={iframeRef}
-                src="https://your-widget-domain.com"
-                title="Chat Widget"
-                className="widget-iframe"
-              />
-              */}
+              <iframe 
+              src="https://app.understand.tech/?api_key=669e5774b0abdd3a8d450b8a9d2586b515572e134231925a50b6d361eac7bfaa&model_id=Ydol%20Chatbot"
+              width="100%" height="600px" title="Chat Widget"
+              className="widget-iframe"
+              ></iframe>
+
             </div>
           </div>
         </div>
