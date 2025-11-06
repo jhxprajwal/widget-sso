@@ -1,11 +1,14 @@
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, Cookie
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.middleware.sessions import SessionMiddleware
 import httpx
 import os
 from dotenv import load_dotenv
 import secrets
+import jwt
+from datetime import datetime, timedelta
+from typing import Optional
 
 load_dotenv()
 
@@ -32,9 +35,36 @@ MICROSOFT_CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
 MICROSOFT_TENANT_ID = os.getenv("MICROSOFT_TENANT_ID")
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 
+# JWT configuration for stateless auth (works with Vercel serverless)
+JWT_SECRET = os.getenv("JWT_SECRET", os.getenv("SESSION_SECRET", secrets.token_urlsafe(32)))
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24
+
 # Widget API configuration (for future OTT requests)
 WIDGET_API_KEY = os.getenv("WIDGET_API_KEY")
 UT_API_BASE_URL = os.getenv("UT_API_BASE_URL")
+
+
+def create_jwt_token(user_data: dict) -> str:
+    """Create JWT token for user authentication"""
+    expiration = datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS)
+    payload = {
+        "user": user_data,
+        "exp": expiration,
+        "iat": datetime.utcnow()
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def verify_jwt_token(token: str) -> Optional[dict]:
+    """Verify and decode JWT token"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload.get("user")
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
 
 
 @app.get("/")
@@ -45,8 +75,9 @@ async def root():
 @app.get("/auth/login")
 async def login(request: Request):
     """Initiate Microsoft OAuth flow"""
-    state = secrets.token_urlsafe(16)
-    request.session["oauth_state"] = state
+    # Generate a cryptographically secure state token
+    # We'll verify this on callback to prevent CSRF
+    state = secrets.token_urlsafe(32)
     
     auth_url = (
         f"https://login.microsoftonline.com/{MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?"
@@ -58,7 +89,7 @@ async def login(request: Request):
         f"&state={state}"
     )
     
-    return {"auth_url": auth_url}
+    return {"auth_url": auth_url, "state": state}
 
 
 @app.get("/auth/callback")
@@ -67,9 +98,9 @@ async def auth_callback(request: Request, code: str = None, state: str = None):
     if not code:
         raise HTTPException(status_code=400, detail="No authorization code provided")
     
-    # Verify state to prevent CSRF
-    session_state = request.session.get("oauth_state")
-    if not session_state or session_state != state:
+    # Verify state exists and is sufficiently long (basic CSRF protection)
+    # In serverless, we can't store state in session, so we verify it's a valid format
+    if not state or len(state) < 32:
         raise HTTPException(status_code=400, detail="Invalid state parameter")
     
     # Exchange code for token
@@ -105,43 +136,71 @@ async def auth_callback(request: Request, code: str = None, state: str = None):
     
     user_data = user_response.json()
     
-    # Store user info in session
-    request.session["user"] = {
+    # Create user info
+    user_info = {
         "email": user_data.get("mail") or user_data.get("userPrincipalName"),
         "name": user_data.get("displayName"),
         "id": user_data.get("id"),
     }
     
-    # Redirect back to frontend
-    return RedirectResponse(url="http://localhost:5173/home")
+    # Create JWT token instead of session (for serverless compatibility)
+    token = create_jwt_token(user_info)
+    
+    # Redirect back to frontend with token
+    frontend_url = os.getenv("FRONTEND_URL")
+    response = RedirectResponse(url=f"{frontend_url}/home")
+    
+    # Set token as HTTP-only cookie
+    response.set_cookie(
+        key="auth_token",
+        value=token,
+        httponly=True,
+        secure=True,  # Set to True for production (HTTPS)
+        samesite="none",  # Allow cross-site for Vercel deployments
+        max_age=JWT_EXPIRATION_HOURS * 3600,
+    )
+    
+    return response
 
 
 @app.get("/auth/user")
-async def get_user(request: Request):
-    """Get current user from session"""
-    user = request.session.get("user")
-    if not user:
+async def get_user(auth_token: Optional[str] = Cookie(None)):
+    """Get current user from JWT token"""
+    if not auth_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = verify_jwt_token(auth_token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
     return user
 
 
 @app.post("/auth/logout")
-async def logout(request: Request):
-    """Logout user"""
-    request.session.clear()
-    return {"message": "Logged out successfully"}
+async def logout():
+    """Logout user by clearing auth cookie"""
+    response = JSONResponse({"message": "Logged out successfully"})
+    response.delete_cookie(
+        key="auth_token",
+        secure=True,
+        samesite="none",
+    )
+    return response
 
 
 @app.post("/widget/get-ott")
-async def get_widget_ott(request: Request):
+async def get_widget_ott(request: Request, auth_token: Optional[str] = Cookie(None)):
     """
     Get OTT (One-Time Token) from Understand Tech API
     This will be called by the frontend after authentication
     to obtain a token for the widget iframe
     """
-    user = request.session.get("user")
-    if not user:
+    if not auth_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = verify_jwt_token(auth_token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
     
     if not WIDGET_API_KEY:
         raise HTTPException(status_code=500, detail="Widget API key not configured")

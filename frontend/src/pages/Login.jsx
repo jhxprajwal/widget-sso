@@ -14,6 +14,12 @@ function Login() {
       })
       const data = await response.json()
       
+      // Store state in localStorage for verification after OAuth redirect
+      // This is needed because Vercel serverless functions are stateless
+      if (data.state) {
+        localStorage.setItem('oauth_state', data.state)
+      }
+      
       // Redirect to Microsoft OAuth
       window.location.href = data.auth_url
     } catch (error) {
