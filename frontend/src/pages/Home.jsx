@@ -91,7 +91,7 @@ function Home({ user, onLogout }) {
               </div>
               
               <iframe 
-              src="https://app.understand.tech/?api_key=669e5774b0abdd3a8d450b8a9d2586b515572e134231925a50b6d361eac7bfaa&model_id=Ydol%20Chatbot"
+              src="https://staging.understand.tech/?api_key=a5fcf18bb1e8100b0a85e5f8e2d0cdfc7a7002ac379a36a7cf59fc28d97ce2fa&model_id=gtdave"
               width="100%" height="600px" title="Chat Widget"
               className="widget-iframe"
               ></iframe>
