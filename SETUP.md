@@ -66,9 +66,12 @@ REDIRECT_URI=http://localhost:8000/auth/callback
 # Generate a random secret for sessions (you can use: python -c "import secrets; print(secrets.token_urlsafe(32))")
 SESSION_SECRET=your_random_secret_here
 
-# Widget API Configuration (for future Understand Tech integration)
+# Widget API Configuration (Required for widget OTT exchange)
 WIDGET_API_KEY=your_widget_api_key_from_understand_tech
-UT_API_BASE_URL=https://api.understandtech.com
+UT_API_BASE_URL=https://staging.understand.tech  # or https://app.understand.tech for production
+
+# Frontend URL (for CORS and redirects)
+FRONTEND_URL=http://localhost:5173
 ```
 
 6. Run the backend server:
@@ -109,15 +112,25 @@ The frontend should now be running at `http://localhost:5173`
    - A welcome message
    - A placeholder for the widget iframe (to be configured later)
 
-## Step 5: Widget Integration (Future)
+## Step 5: Widget Integration
 
-When you're ready to integrate the Understand Tech widget:
+The widget OTT exchange is now fully implemented! To use it:
 
-1. Obtain your Widget API Key from Understand Tech
-2. Add it to your backend `.env` file
-3. In `frontend/src/pages/Home.jsx`, uncomment the OTT fetching logic
-4. Configure the iframe URL to point to your widget domain
-5. The backend endpoint `/widget/get-ott` will handle fetching the One-Time Token
+1. **Obtain your Widget API Key** from Understand Tech
+2. **Add it to your backend `.env` file**:
+   ```env
+   WIDGET_API_KEY=your_actual_widget_api_key
+   UT_API_BASE_URL=https://staging.understand.tech  # or production URL
+   ```
+3. **Update widget configuration** in `frontend/src/pages/Home.jsx`:
+   - Change `WIDGET_URL` if needed (currently set to `https://app.understand.tech`)
+   - Change `MODEL_ID` to your assistant's model ID (currently set to `Ydol Chatbot`)
+4. **Restart both backend and frontend servers**
+5. After login, the home page will:
+   - Automatically fetch an OTT from your backend
+   - Send it to the widget iframe via postMessage
+   - The widget (UT side) exchanges the OTT for a session cookie
+   - The widget is ready for authenticated chat interactions
 
 ## Architecture Flow
 
@@ -135,12 +148,16 @@ When you're ready to integrate the Understand Tech widget:
    - Frontend makes authenticated requests with `credentials: 'include'`
    - Session persists until logout
 
-3. **Widget Integration** (when configured):
-   - Frontend requests OTT from backend
-   - Backend calls Understand Tech API with Widget API Key
-   - Backend returns OTT to frontend
-   - Frontend sends OTT to widget iframe via postMessage
-   - Widget exchanges OTT for session cookie
+3. **Widget OTT Exchange Flow** (fully implemented):
+   - User authenticates via Microsoft SSO
+   - Home page loads with widget iframe
+   - Frontend calls backend `/widget/get-ott` with model_id and origin
+   - Backend validates auth token and calls UT API `/widget/ott` with Widget API Key
+   - UT API validates key, team, assistant, origin and returns signed OTT (60s TTL)
+   - Frontend receives OTT and sends it to iframe via postMessage `{ type: 'UT_OTT', ott }`
+   - Widget iframe (UT code) calls `/widget/exchange-ott` with credentials
+   - UT API verifies OTT (signature, expiry, replay, origin) and sets HttpOnly session cookie
+   - Widget is now authenticated and ready for chat interactions
 
 ## Project Structure
 

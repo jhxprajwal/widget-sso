@@ -4,7 +4,7 @@ import Login from './pages/Login'
 import Home from './pages/Home'
 import './App.css'
 
-const API_BASE_URL = 'https://backend-smoky-delta.vercel.app'
+export const API_BASE_URL = 'https://backend-smoky-delta.vercel.app'
 
 function App() {
   const [user, setUser] = useState(null)

@@ -195,45 +195,104 @@ async def get_widget_ott(request: Request, auth_token: Optional[str] = Cookie(No
     This will be called by the frontend after authentication
     to obtain a token for the widget iframe
     """
+    print("\n" + "="*80)
+    print("🔑 [BACKEND] Widget OTT Request Started")
+    print("="*80)
+    
     if not auth_token:
+        print("❌ [BACKEND] No auth token provided")
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     user = verify_jwt_token(auth_token)
     if not user:
+        print("❌ [BACKEND] Invalid or expired JWT token")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     
+    print(f"✅ [BACKEND] User authenticated: {user.get('email', 'unknown')}")
+    
     if not WIDGET_API_KEY:
+        print("❌ [BACKEND] Widget API key not configured in environment")
         raise HTTPException(status_code=500, detail="Widget API key not configured")
+    
+    if not UT_API_BASE_URL:
+        print("❌ [BACKEND] UT API base URL not configured in environment")
+        raise HTTPException(status_code=500, detail="UT API base URL not configured")
     
     body = await request.json()
     model_id = body.get("model_id")
     origin = body.get("origin", "http://localhost:5173")
     
+    print(f"📋 [BACKEND] Request params:")
+    print(f"   - model_id: {model_id}")
+    print(f"   - origin: {origin}")
+    print(f"   - user_email: {user.get('email')}")
+    
     if not model_id:
+        print("❌ [BACKEND] model_id is required but not provided")
         raise HTTPException(status_code=400, detail="model_id is required")
     
     # Call UT API to get OTT
-    async with httpx.AsyncClient() as client:
-        ott_response = await client.post(
-            f"{UT_API_BASE_URL}/widget/ott",
-            headers={
-                "Authorization": f"Bearer {WIDGET_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model_id": model_id,
-                "origin": origin,
-                "user_email": user.get("email"),
-            },
-        )
+    try:
+        ut_api_url = f"{UT_API_BASE_URL}/widget/ott"
+        print(f"\n🌐 [BACKEND] Calling UT API: POST {ut_api_url}")
+        print(f"   - Authorization: Bearer {WIDGET_API_KEY[:20]}...{WIDGET_API_KEY[-10:]}")
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            ott_response = await client.post(
+                ut_api_url,
+                headers={
+                    "Authorization": f"Bearer {WIDGET_API_KEY}",
+                    "Content-Type": "application/json",
+                    "Accept-Language": "en",  # UT API expects Accept-Language header
+                },
+                json={
+                    "model_id": model_id,
+                    "origin": origin,
+                    "user_email": user.get("email"),
+                },
+            )
+        
+        print(f"📡 [BACKEND] UT API Response: {ott_response.status_code}")
+        
+        if ott_response.status_code != 200:
+            error_detail = "Failed to obtain OTT from UT API"
+            try:
+                error_data = ott_response.json()
+                error_detail = error_data.get("detail", error_detail)
+                print(f"❌ [BACKEND] UT API Error: {error_detail}")
+            except Exception:
+                error_detail = ott_response.text or error_detail
+                print(f"❌ [BACKEND] UT API Error (raw): {error_detail}")
+            
+            raise HTTPException(
+                status_code=ott_response.status_code,
+                detail=error_detail
+            )
+        
+        ott_data = ott_response.json()
+        ott_preview = ott_data.get("ott", "")[:30] + "..." if ott_data.get("ott") else "None"
+        print(f"✅ [BACKEND] OTT received successfully")
+        print(f"   - OTT (preview): {ott_preview}")
+        print(f"   - Expires in: {ott_data.get('expires_in')} seconds")
+        print("="*80 + "\n")
+        
+        return ott_data
     
-    if ott_response.status_code != 200:
-        raise HTTPException(
-            status_code=ott_response.status_code,
-            detail=f"Failed to obtain OTT: {ott_response.text}"
-        )
-    
-    return ott_response.json()
+    except httpx.TimeoutException:
+        print("❌ [BACKEND] UT API request timed out (>10s)")
+        print("="*80 + "\n")
+        raise HTTPException(status_code=504, detail="UT API request timed out")
+    except httpx.RequestError as e:
+        print(f"❌ [BACKEND] Failed to connect to UT API: {str(e)}")
+        print("="*80 + "\n")
+        raise HTTPException(status_code=502, detail=f"Failed to connect to UT API: {str(e)}")
+    except HTTPException:
+        print("="*80 + "\n")
+        raise
+    except Exception as e:
+        print(f"❌ [BACKEND] Unexpected error: {str(e)}")
+        print("="*80 + "\n")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 if __name__ == "__main__":
