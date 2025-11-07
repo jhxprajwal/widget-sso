@@ -20,7 +20,7 @@ cp env.example .env
 python main.py
 ```
 
-Server runs at `http://localhost:8000`
+Server runs at `http://localhost:8080`
 
 ## API Endpoints
 

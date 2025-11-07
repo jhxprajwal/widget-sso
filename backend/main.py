@@ -236,16 +236,16 @@ async def get_widget_ott(request: Request, auth_token: Optional[str] = Cookie(No
         ut_api_url = f"{UT_API_BASE_URL}/widget/ott"
         print(f"\n🌐 [BACKEND] Calling UT API: POST {ut_api_url}")
         print(f"   - Authorization: Bearer {WIDGET_API_KEY[:20]}...{WIDGET_API_KEY[-10:]}")
+        print(f"   - Query params: model_id={model_id}, origin={origin}, user_email={user.get('email')}")
         
         async with httpx.AsyncClient(timeout=10.0) as client:
             ott_response = await client.post(
                 ut_api_url,
                 headers={
                     "Authorization": f"Bearer {WIDGET_API_KEY}",
-                    "Content-Type": "application/json",
                     "Accept-Language": "en",  # UT API expects Accept-Language header
                 },
-                json={
+                params={
                     "model_id": model_id,
                     "origin": origin,
                     "user_email": user.get("email"),
