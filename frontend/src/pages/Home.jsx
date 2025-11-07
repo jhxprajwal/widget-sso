@@ -91,11 +91,10 @@ function Home({ user, onLogout }) {
               </div>
               
               <iframe 
-              src="https://staging.understand.tech/?api_key=a5fcf18bb1e8100b0a85e5f8e2d0cdfc7a7002ac379a36a7cf59fc28d97ce2fa&model_id=gtdave"
+              src="http://localhost:5173/?api_key=a5fcf18bb1e8100b0a85e5f8e2d0cdfc7a7002ac379a36a7cf59fc28d97ce2fa&model_id=gtdave"
               width="100%" height="600px" title="Chat Widget"
               className="widget-iframe"
               ></iframe>
-
             </div>
           </div>
         </div>
