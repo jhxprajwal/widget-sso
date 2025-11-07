@@ -10,9 +10,17 @@ function Home({ user, onLogout }) {
   const iframeRef = useRef(null)
   const [widgetReady, setWidgetReady] = useState(false)
   const [widgetError, setWidgetError] = useState(null)
+  const ottSentRef = useRef(false) // Track if OTT was already sent
 
   useEffect(() => {
     const fetchAndSendOTT = async () => {
+      // Prevent duplicate OTT requests
+      if (ottSentRef.current) {
+        console.log('⏭️ [FRONTEND] OTT already sent, skipping duplicate request')
+        return
+      }
+      
+      ottSentRef.current = true // Mark as in-progress
       console.log('\n' + '='.repeat(80))
       console.log('🚀 [FRONTEND] Starting Widget OTT Exchange Flow')
       console.log('='.repeat(80))
@@ -78,6 +86,7 @@ function Home({ user, onLogout }) {
         console.error('❌ [FRONTEND] OTT exchange flow failed:', error)
         console.log('='.repeat(80) + '\n')
         setWidgetError(error.message)
+        ottSentRef.current = false // Reset on error so user can retry
       }
     }
 
@@ -116,7 +125,7 @@ function Home({ user, onLogout }) {
       if (event.data.type === 'UT_READY') {
         console.log('✅ [FRONTEND] Widget sent UT_READY signal')
         // Iframe is ready, send OTT if we haven't already
-        if (!widgetReady) {
+        if (!ottSentRef.current) {
           console.log('🔄 [FRONTEND] Widget ready but OTT not sent yet, fetching OTT...')
           fetchAndSendOTT()
         } else {
@@ -135,7 +144,7 @@ function Home({ user, onLogout }) {
         iframe.onload = null
       }
     }
-  }, [widgetReady])
+  }, []) // Empty dependency array - only run once on mount
 
   // Log when component mounts
   useEffect(() => {
