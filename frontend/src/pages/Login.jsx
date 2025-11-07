@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './Login.css'
 
-const API_BASE_URL = 'http://localhost:8080'
+const API_BASE_URL = 'https://backend-smoky-delta.vercel.app'
 
 function Login() {
   const [loading, setLoading] = useState(false)
