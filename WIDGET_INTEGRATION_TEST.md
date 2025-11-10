@@ -10,7 +10,7 @@ Before testing, ensure you have:
    - `WIDGET_API_KEY`: Your team's widget API key from Understand Tech
    - `UT_API_BASE_URL`: The UT API endpoint (e.g., `https://staging.understand.tech`)
    - `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`: For SSO
-   - `SESSION_SECRET` and `JWT_SECRET`: For session management
+   - `SESSION_SECRET` (and optionally `JWT_SECRET` if you want a dedicated signing key): For session management
    - `FRONTEND_URL`: Your frontend URL (e.g., `http://localhost:5173`)
 
 2. **Frontend configuration** in `src/pages/Home.jsx`:
@@ -30,6 +30,7 @@ Before testing, ensure you have:
 3. Complete Microsoft OAuth login
 4. Verify you're redirected to `/home`
 5. Verify your name and email display correctly
+6. Open DevTools → Application → Cookies and confirm an `auth_token` cookie exists for the parent site origin
 
 **Expected Result**: ✅ User authenticated on parent site with Microsoft SSO
 

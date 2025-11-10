@@ -65,6 +65,8 @@ REDIRECT_URI=http://localhost:8000/auth/callback
 
 # Generate a random secret for sessions (you can use: python -c "import secrets; print(secrets.token_urlsafe(32))")
 SESSION_SECRET=your_random_secret_here
+# Optional: override if you want a different signing key than SESSION_SECRET
+JWT_SECRET=
 
 # Widget API Configuration (Required for widget OTT exchange)
 WIDGET_API_KEY=your_widget_api_key_from_understand_tech
@@ -107,7 +109,8 @@ The frontend should now be running at `http://localhost:5173`
 3. Click **"Sign in with Microsoft"**
 4. You'll be redirected to Microsoft's login page
 5. After successful authentication, you'll be redirected back to the home page
-6. The home page displays:
+6. Open DevTools → Application → Cookies and confirm an `auth_token` cookie appears for the frontend origin
+7. The home page displays:
    - Your name and email from Microsoft
    - A welcome message
    - A placeholder for the widget iframe (to be configured later)
@@ -123,8 +126,8 @@ The widget OTT exchange is now fully implemented! To use it:
    UT_API_BASE_URL=https://staging.understand.tech  # or production URL
    ```
 3. **Update widget configuration** in `frontend/src/pages/Home.jsx`:
-   - Change `WIDGET_URL` if needed (currently set to `https://app.understand.tech`)
-   - Change `MODEL_ID` to your assistant's model ID (currently set to `Ydol Chatbot`)
+   - Change `WIDGET_URL` if needed
+   - Change `MODEL_ID` to your assistant's model ID
 4. **Restart both backend and frontend servers**
 5. After login, the home page will:
    - Automatically fetch an OTT from your backend
@@ -136,17 +139,16 @@ The widget OTT exchange is now fully implemented! To use it:
 
 1. **Login Flow**:
    - User clicks "Sign in with Microsoft"
-   - Frontend calls backend `/auth/login`
-   - Backend returns Microsoft OAuth URL
+   - Frontend calls backend `/auth/login` to retrieve the Microsoft OAuth URL + CSRF state
    - User is redirected to Microsoft
    - After auth, Microsoft redirects to `/auth/callback`
-   - Backend exchanges code for token, stores user in session
+   - Backend exchanges the code for tokens, builds a profile, and sets an `auth_token` JWT cookie (HttpOnly) for the frontend
    - User is redirected back to frontend home page
 
 2. **Session Management**:
-   - Backend uses HTTP-only session cookies
-   - Frontend makes authenticated requests with `credentials: 'include'`
-   - Session persists until logout
+   - Backend stores auth state in the JWT cookie (no server database required for the demo)
+   - Frontend makes authenticated requests with `credentials: 'include'` so the cookie is sent
+   - Session persists until logout or until the JWT expires
 
 3. **Widget OTT Exchange Flow** (fully implemented):
    - User authenticates via Microsoft SSO
