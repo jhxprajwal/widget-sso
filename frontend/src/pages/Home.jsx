@@ -3,8 +3,8 @@ import { API_BASE_URL } from '../App'
 import './Home.css'
 
 // Widget configuration
-const WIDGET_URL = 'https://staging.understand.tech/?api_key=b77923b658394434c28553c389a64955a761707c09f536bc52b1871ae9819f11&model_id=tesso'
-const MODEL_ID = 'tesso'
+const WIDGET_URL = 'https://staging.understand.tech/?api_key=a5fcf18bb1e8100b0a85e5f8e2d0cdfc7a7002ac379a36a7cf59fc28d97ce2fa&model_id=gtdave'
+const MODEL_ID = 'gtdave'
 
 function Home({ user, onLogout }) {
   const iframeRef = useRef(null)
