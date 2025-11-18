@@ -1,0 +1,45 @@
+/* Chat Widget Styles */
+
+.chat-widget-container {
+  transition: all 0.3s ease-in-out;
+}
+
+.chat-widget-container.fullscreen {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  transform-origin: center;
+  width: 90vw !important;
+  height: 90vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  bottom: auto !important;
+  right: auto !important;
+}
+
+.gray-overlay {
+  backdrop-filter: blur(2px);
+}
+
+/* Hover effect on chat icon */
+#chat-widget-toggle:hover .icon-container {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltip fade-in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+#tooltip-text {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+

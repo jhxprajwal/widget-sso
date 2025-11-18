@@ -1,10 +1,12 @@
 import { useRef, useEffect, useState } from 'react'
 import { API_BASE_URL } from '../App'
 import './Home.css'
+import ChatWidget from '../components/ChatWidget'
+import { getWidgetUrl, WIDGET_CONFIG } from '../config'
 
 // Widget configuration
-const WIDGET_URL = 'http://localhost:5173/?api_key=a5fcf18bb1e8100b0a85e5f8e2d0cdfc7a7002ac379a36a7cf59fc28d97ce2fa&model_id=gtdave'
-const MODEL_ID = 'gtdave'
+const WIDGET_URL = getWidgetUrl()
+const MODEL_ID = WIDGET_CONFIG.modelId
 
 function Home({ user, onLogout }) {
   const iframeRef = useRef(null)
@@ -216,6 +218,9 @@ function Home({ user, onLogout }) {
           </div>
         </div>
       </main>
+
+      {/* Floating Chat Widget */}
+      <ChatWidget />
     </div>
   )
 }
